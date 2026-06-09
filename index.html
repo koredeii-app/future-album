@@ -666,6 +666,49 @@
       border-left: 3px solid var(--primary);
     }
 
+    /* ---- Person chips ---- */
+    .person-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 9px 18px;
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      font-family: inherit;
+    }
+
+    .chip.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .person-tag {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 12px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .person-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
     /* ---- Detail photo edit affordance ---- */
     .detail-photo-wrap {
       position: relative;
@@ -775,6 +818,15 @@
       <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="onPhoto(event)">
     </div>
     <div class="fg">
+      <label>誰が写っていますか？（任意）</label>
+      <div class="person-chips" id="done-persons">
+        <button class="chip" data-person="自身" onclick="toggleChip(this)">自身</button>
+        <button class="chip" data-person="親" onclick="toggleChip(this)">親</button>
+        <button class="chip" data-person="子供" onclick="toggleChip(this)">子供</button>
+        <button class="chip" data-person="家族" onclick="toggleChip(this)">家族</button>
+      </div>
+    </div>
+    <div class="fg">
       <label for="inp-pm">達成のひとこと（任意）</label>
       <textarea id="inp-pm" placeholder="達成してみてどうでしたか？"></textarea>
     </div>
@@ -796,6 +848,15 @@
         <button class="pa-change" onclick="event.stopPropagation();pickEditPhoto()">写真を変更</button>
       </div>
       <input type="file" id="ep-input" accept="image/*" style="display:none" onchange="onEditPhoto(event)">
+    </div>
+    <div class="fg">
+      <label>誰が写っていますか？（任意）</label>
+      <div class="person-chips" id="ep-persons">
+        <button class="chip" data-person="自身" onclick="toggleChip(this)">自身</button>
+        <button class="chip" data-person="親" onclick="toggleChip(this)">親</button>
+        <button class="chip" data-person="子供" onclick="toggleChip(this)">子供</button>
+        <button class="chip" data-person="家族" onclick="toggleChip(this)">家族</button>
+      </div>
     </div>
     <div class="fg">
       <label for="ep-memo">ひとこと（任意）</label>
@@ -935,7 +996,7 @@ function submitAdd() {
   if (!title) { document.getElementById('inp-title').focus(); return; }
   const memo = document.getElementById('inp-memo').value.trim();
   const all = db.load();
-  all.unshift({ id: genId(), title, memo, createdAt: isoToday(), completed: false, completedAt: null, photo: null, photoMemo: '' });
+  all.unshift({ id: genId(), title, memo, createdAt: isoToday(), completed: false, completedAt: null, photo: null, photoMemo: '', persons: [] });
   db.save(all);
   closeOverlay('add-overlay');
   render();
@@ -945,6 +1006,7 @@ function submitAdd() {
 function openDone(id) {
   pendingId = id;
   pendingPhoto = null;
+  resetChips('done-persons');
   const area = document.getElementById('photo-area');
   area.classList.remove('has-photo');
   document.getElementById('pa-preview').src = '';
@@ -996,10 +1058,33 @@ function submitDone() {
     m.completedAt = isoToday();
     m.photo = pendingPhoto;
     m.photoMemo = photoMemo;
+    m.persons = getSelectedChips('done-persons');
   }
   db.save(all);
   closeOverlay('done-overlay');
   switchTab('album');
+}
+
+// ---- Person chips ----
+function toggleChip(el) {
+  el.classList.toggle('selected');
+}
+
+function resetChips(groupId) {
+  document.querySelectorAll(`#${groupId} .chip`).forEach(c => c.classList.remove('selected'));
+}
+
+function setChips(groupId, persons) {
+  resetChips(groupId);
+  (persons || []).forEach(p => {
+    const c = document.querySelector(`#${groupId} .chip[data-person="${p}"]`);
+    if (c) c.classList.add('selected');
+  });
+}
+
+function getSelectedChips(groupId) {
+  return Array.from(document.querySelectorAll(`#${groupId} .chip.selected`))
+    .map(el => el.dataset.person);
 }
 
 // ---- Edit Photo ----
@@ -1011,6 +1096,7 @@ function openEditPhoto(id) {
   if (!m) return;
   editPhotoId = id;
   editPhoto = null;
+  setChips('ep-persons', m.persons);
   const area = document.getElementById('ep-area');
   const preview = document.getElementById('ep-preview');
   if (m.photo) {
@@ -1051,6 +1137,7 @@ function submitEditPhoto() {
   if (m) {
     if (editPhoto !== null) m.photo = editPhoto;
     m.photoMemo = memo;
+    m.persons = getSelectedChips('ep-persons');
   }
   db.save(all);
   closeOverlay('ep-overlay');
@@ -1078,6 +1165,10 @@ function openDetail(id) {
     </div>
     <div class="detail-content">
       <span class="detail-badge">✓ 達成済み</span>
+      ${(m.persons && m.persons.length) ? `
+        <div class="person-tags">
+          ${m.persons.map(p => `<span class="person-tag">${esc(p)}</span>`).join('')}
+        </div>` : ''}
       <div class="detail-content__title">${esc(m.title)}</div>
       ${m.memo ? `<div class="detail-content__memo">${esc(m.memo)}</div>` : ''}
       <div class="detail-dates">
