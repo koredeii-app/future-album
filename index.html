@@ -666,6 +666,35 @@
       border-left: 3px solid var(--primary);
     }
 
+    /* ---- Detail photo edit affordance ---- */
+    .detail-photo-wrap {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .detail-photo-edit-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.58);
+      color: white;
+      border-radius: 20px;
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .detail-photo-add-btn {
+      margin-top: 14px;
+      display: inline-block;
+      background: rgba(255, 112, 67, 0.12);
+      color: var(--primary);
+      border-radius: 20px;
+      padding: 10px 22px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
     /* ---- Scrollbar ---- */
     ::-webkit-scrollbar { display: none; }
   </style>
@@ -750,6 +779,29 @@
       <textarea id="inp-pm" placeholder="達成してみてどうでしたか？"></textarea>
     </div>
     <button class="btn-submit" onclick="submitDone()">アルバムに残す</button>
+  </div>
+</div>
+
+<!-- Edit photo overlay -->
+<div class="overlay" id="ep-overlay" onclick="overlayTap(event,'ep-overlay')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">📷 写真を編集</div>
+    <div class="fg">
+      <label>写真</label>
+      <div class="photo-area" id="ep-area" onclick="pickEditPhoto()">
+        <span class="pa-icon">📷</span>
+        <span class="pa-text">タップして写真を選ぶ</span>
+        <img class="pa-preview" id="ep-preview" alt="">
+        <button class="pa-change" onclick="event.stopPropagation();pickEditPhoto()">写真を変更</button>
+      </div>
+      <input type="file" id="ep-input" accept="image/*" style="display:none" onchange="onEditPhoto(event)">
+    </div>
+    <div class="fg">
+      <label for="ep-memo">ひとこと（任意）</label>
+      <textarea id="ep-memo" placeholder="達成してみてどうでしたか？"></textarea>
+    </div>
+    <button class="btn-submit" onclick="submitEditPhoto()">保存する</button>
   </div>
 </div>
 
@@ -950,6 +1002,62 @@ function submitDone() {
   switchTab('album');
 }
 
+// ---- Edit Photo ----
+let editPhotoId = null;
+let editPhoto = null;
+
+function openEditPhoto(id) {
+  const m = db.load().find(x => x.id === id);
+  if (!m) return;
+  editPhotoId = id;
+  editPhoto = null;
+  const area = document.getElementById('ep-area');
+  const preview = document.getElementById('ep-preview');
+  if (m.photo) {
+    area.classList.add('has-photo');
+    preview.src = m.photo;
+  } else {
+    area.classList.remove('has-photo');
+    preview.src = '';
+  }
+  document.getElementById('ep-memo').value = m.photoMemo || '';
+  document.getElementById('ep-input').value = '';
+  openOverlay('ep-overlay');
+}
+
+function pickEditPhoto() {
+  document.getElementById('ep-input').click();
+}
+
+function onEditPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    compressImage(ev.target.result, 1080, 0.75).then(data => {
+      editPhoto = data;
+      document.getElementById('ep-preview').src = data;
+      document.getElementById('ep-area').classList.add('has-photo');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitEditPhoto() {
+  if (!editPhotoId) return;
+  const memo = document.getElementById('ep-memo').value.trim();
+  const all = db.load();
+  const m = all.find(x => x.id === editPhotoId);
+  if (m) {
+    if (editPhoto !== null) m.photo = editPhoto;
+    m.photoMemo = memo;
+  }
+  db.save(all);
+  closeOverlay('ep-overlay');
+  openDetail(editPhotoId);
+  if (tab === 'album') renderAlbum();
+}
+
 // ---- Detail ----
 function openDetail(id) {
   const m = db.load().find(x => x.id === id);
@@ -957,9 +1065,17 @@ function openDetail(id) {
   currentDetailId = id;
   document.getElementById('detail-title').textContent = m.title;
   document.getElementById('detail-body').innerHTML = `
-    ${m.photo
-      ? `<img class="detail-photo" src="${m.photo}" alt="${esc(m.title)}">`
-      : `<div class="detail-no-photo">🌸</div>`}
+    <div class="detail-photo-wrap" onclick="openEditPhoto('${m.id}')">
+      ${m.photo
+        ? `<img class="detail-photo" src="${m.photo}" alt="${esc(m.title)}">
+           <div class="detail-photo-edit-btn">📷 写真を変更</div>`
+        : `<div class="detail-no-photo">
+             <div style="text-align:center">
+               <div>🌸</div>
+               <div class="detail-photo-add-btn">📷 写真を追加する</div>
+             </div>
+           </div>`}
+    </div>
     <div class="detail-content">
       <span class="detail-badge">✓ 達成済み</span>
       <div class="detail-content__title">${esc(m.title)}</div>
