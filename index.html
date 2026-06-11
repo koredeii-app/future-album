@@ -738,6 +738,83 @@
       font-weight: 700;
     }
 
+    /* ---- Roulette ---- */
+    .roulette-card {
+      background: linear-gradient(135deg, var(--primary) 0%, #FF8A65 100%);
+      border-radius: var(--radius);
+      padding: 20px 20px 18px;
+      margin-bottom: 20px;
+      color: white;
+      text-align: center;
+    }
+
+    .roulette-card__label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      opacity: 0.85;
+      margin-bottom: 12px;
+    }
+
+    .roulette-card__mission {
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.45;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      opacity: 0.95;
+    }
+
+    .roulette-card__mission.placeholder {
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0.65;
+    }
+
+    .roulette-card__actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .btn-spin {
+      background: rgba(255,255,255,0.22);
+      border: 1.5px solid rgba(255,255,255,0.5);
+      color: white;
+      border-radius: 20px;
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .btn-spin:active {
+      background: rgba(255,255,255,0.35);
+    }
+
+    .btn-add-spin {
+      background: white;
+      border: none;
+      color: var(--primary);
+      border-radius: 20px;
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      display: none;
+      transition: opacity 0.15s;
+    }
+
+    .btn-add-spin:active {
+      opacity: 0.75;
+    }
+
     /* ---- Scrollbar ---- */
     ::-webkit-scrollbar { display: none; }
   </style>
@@ -748,14 +825,22 @@
   <header>
     <span class="header-icon">📸</span>
     <h1>未来アルバム</h1>
-    <span class="header-sub">家族との思い出</span>
+    <span class="header-sub">親との時間を、今日作ろう</span>
   </header>
 
   <main>
     <!-- Mission tab -->
     <div id="tab-mission" class="tab-panel active">
+      <div class="roulette-card">
+        <div class="roulette-card__label">今日のミッション候補</div>
+        <div class="roulette-card__mission placeholder" id="roulette-result">ルーレットを回して<br>今日やることを決めよう</div>
+        <div class="roulette-card__actions">
+          <button class="btn-spin" onclick="spinRoulette()">🎲 回す</button>
+          <button class="btn-add-spin" id="btn-add-spin" onclick="addFromRoulette()">このミッションを追加</button>
+        </div>
+      </div>
       <div class="section-head">
-        <span class="section-head__label">ミッション</span>
+        <span class="section-head__label">ミッション一覧</span>
         <span class="badge" id="mission-badge">0</span>
       </div>
       <div class="mission-list" id="mission-list"></div>
@@ -792,11 +877,11 @@
     <div class="sheet-title">新しいミッションを追加</div>
     <div class="fg">
       <label for="inp-title">タイトル</label>
-      <input id="inp-title" type="text" placeholder="例：温泉旅行に一緒に行く" maxlength="50">
+      <input id="inp-title" type="text" placeholder="例：一緒に食事に出かける" maxlength="50">
     </div>
     <div class="fg">
       <label for="inp-memo">メモ（任意）</label>
-      <textarea id="inp-memo" placeholder="どんな思い出にしたいか書いてみよう"></textarea>
+      <textarea id="inp-memo" placeholder="どんな時間にしたいか書いてみよう（任意）"></textarea>
     </div>
     <button class="btn-submit" onclick="submitAdd()">追加する</button>
   </div>
@@ -820,10 +905,11 @@
     <div class="fg">
       <label>誰が写っていますか？（任意）</label>
       <div class="person-chips" id="done-persons">
-        <button class="chip" data-person="自身" onclick="toggleChip(this)">自身</button>
-        <button class="chip" data-person="親" onclick="toggleChip(this)">親</button>
-        <button class="chip" data-person="子供" onclick="toggleChip(this)">子供</button>
-        <button class="chip" data-person="家族" onclick="toggleChip(this)">家族</button>
+        <button class="chip" data-person="父" onclick="toggleChip(this)">父</button>
+        <button class="chip" data-person="母" onclick="toggleChip(this)">母</button>
+        <button class="chip" data-person="両親" onclick="toggleChip(this)">両親</button>
+        <button class="chip" data-person="祖父" onclick="toggleChip(this)">祖父</button>
+        <button class="chip" data-person="祖母" onclick="toggleChip(this)">祖母</button>
       </div>
     </div>
     <div class="fg">
@@ -852,10 +938,11 @@
     <div class="fg">
       <label>誰が写っていますか？（任意）</label>
       <div class="person-chips" id="ep-persons">
-        <button class="chip" data-person="自身" onclick="toggleChip(this)">自身</button>
-        <button class="chip" data-person="親" onclick="toggleChip(this)">親</button>
-        <button class="chip" data-person="子供" onclick="toggleChip(this)">子供</button>
-        <button class="chip" data-person="家族" onclick="toggleChip(this)">家族</button>
+        <button class="chip" data-person="父" onclick="toggleChip(this)">父</button>
+        <button class="chip" data-person="母" onclick="toggleChip(this)">母</button>
+        <button class="chip" data-person="両親" onclick="toggleChip(this)">両親</button>
+        <button class="chip" data-person="祖父" onclick="toggleChip(this)">祖父</button>
+        <button class="chip" data-person="祖母" onclick="toggleChip(this)">祖母</button>
       </div>
     </div>
     <div class="fg">
@@ -881,6 +968,49 @@
 </div>
 
 <script>
+// ---- Roulette missions ----
+const ROULETTE_MISSIONS = [
+  '一緒に食事に出かける',
+  '実家でゆっくり過ごす',
+  '昔の写真を一緒に見る',
+  '温泉旅行に連れて行く',
+  '料理を一緒に作る',
+  '趣味を一緒にやってみる',
+  '一緒に映画・ドラマを見る',
+  '買い物に付き合う',
+  '昔話をじっくり聞く',
+  '体のことをちゃんと聞いてみる',
+  '誕生日を一緒にお祝いする',
+  '親の好きな場所に行く',
+  '手紙やメッセージを書く',
+  '季節の行事を一緒に楽しむ',
+  '散歩に一緒に出かける',
+];
+
+let rouletteSelected = null;
+
+function spinRoulette() {
+  const idx = Math.floor(Math.random() * ROULETTE_MISSIONS.length);
+  rouletteSelected = ROULETTE_MISSIONS[idx];
+  const el = document.getElementById('roulette-result');
+  el.textContent = rouletteSelected;
+  el.classList.remove('placeholder');
+  document.getElementById('btn-add-spin').style.display = 'block';
+}
+
+function addFromRoulette() {
+  if (!rouletteSelected) return;
+  const all = db.load();
+  all.unshift({ id: genId(), title: rouletteSelected, memo: '', createdAt: isoToday(), completed: false, completedAt: null, photo: null, photoMemo: '', persons: [] });
+  db.save(all);
+  rouletteSelected = null;
+  const el = document.getElementById('roulette-result');
+  el.textContent = 'ルーレットを回して\n今日やることを決めよう';
+  el.classList.add('placeholder');
+  document.getElementById('btn-add-spin').style.display = 'none';
+  render();
+}
+
 // ---- Storage ----
 const KEY = 'future-album-v1';
 
@@ -935,8 +1065,8 @@ function renderMissions() {
     el.innerHTML = `
       <div class="empty">
         <div class="empty__icon">🌱</div>
-        <div class="empty__title">ミッションを追加しよう</div>
-        <div class="empty__sub">家族と叶えたい<br>思い出を登録してみましょう。</div>
+        <div class="empty__title">今日やることを決めよう</div>
+        <div class="empty__sub">ルーレットを回すか、<br>「＋」で自分でミッションを追加しよう。</div>
       </div>`;
     return;
   }
@@ -965,7 +1095,7 @@ function renderAlbum() {
       <div class="empty" style="grid-column:1/-1;">
         <div class="empty__icon">📷</div>
         <div class="empty__title">まだ思い出がありません</div>
-        <div class="empty__sub">ミッションを達成すると<br>ここに写真が並びます。</div>
+        <div class="empty__sub">ミッションを達成すると<br>親との思い出がここに残ります。</div>
       </div>`;
     return;
   }
